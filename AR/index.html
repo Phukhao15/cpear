@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>3D Model Viewer with AR</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            padding: 1rem;
+            text-align: center;
+        }
+
+        model-viewer {
+            width: 100%;
+            height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+        }
+
+        .btn {
+            margin-top: 1rem;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 1000;
+        }
+
+        #error-message {
+            display: none;
+            color: red;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="mb-4">3D Model Viewer with AR</h1>
+
+        <div id="error-message" class="alert alert-danger" role="alert"></div>
+
+        <!-- 3D Model Viewer -->
+        <model-viewer id="viewer" src="/model-1.glb" ios-src="" camera-controls ar
+            ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" auto-rotate shadow-intensity="1" exposure="1"
+            touch-action="pan-y">
+        </model-viewer>
+
+        <!-- Custom AR Button -->
+        <button class="btn btn-primary" onclick="activateAR()">View in AR</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+    <script>
+        const modelViewer = document.querySelector('#viewer');
+        const loading = document.querySelector('#loading');
+        const errorMessage = document.querySelector('#error-message');
+
+        // Show loading when starting
+        loading.style.display = 'block';
+
+        // Handle model loading
+        modelViewer.addEventListener('load', () => {
+            loading.style.display = 'none';
+            console.log('Model loaded successfully');
+        });
+
+        // Handle loading errors
+        modelViewer.addEventListener('error', (error) => {
+            loading.style.display = 'none';
+            errorMessage.textContent = 'Error loading 3D model: ' + error.detail.type;
+            errorMessage.style.display = 'block';
+            console.error('Error details:', error);
+        });
+
+        // Check AR support
+        window.addEventListener('load', () => {
+            if (modelViewer) {
+                const isARSupported = modelViewer.canActivateAR;
+                console.log('AR supported:', isARSupported);
+
+                if (!isARSupported) {
+                    const arButton = document.querySelector('.btn-primary');
+                    arButton.disabled = true;
+                    arButton.title = 'AR not supported on this device';
+                }
+            }
+        });
+
+        // Custom AR activation function
+        function activateAR() {
+            if (modelViewer) {
+                if (modelViewer.canActivateAR) {
+                    try {
+                        modelViewer.activateAR()
+                            .then(() => {
+                                console.log('AR activated successfully');
+                            })
+                            .catch((error) => {
+                                console.error('AR activation error:', error);
+                                errorMessage.textContent = 'Failed to activate AR. Please ensure your device supports AR and try again.';
+                                errorMessage.style.display = 'block';
+                            });
+                    } catch (error) {
+                        console.error('Error in AR activation:', error);
+                        errorMessage.textContent = 'Error activating AR: ' + error.message;
+                        errorMessage.style.display = 'block';
+                    }
+                } else {
+                    errorMessage.textContent = 'AR is not supported on this device or browser.';
+                    errorMessage.style.display = 'block';
+                }
+            }
+        }
+
+        // Log device and browser info for debugging
+        console.log('User Agent:', navigator.userAgent);
+        if ('xr' in navigator) {
+            navigator.xr.isSessionSupported('immersive-ar')
+                .then(supported => console.log('WebXR AR supported:', supported))
+                .catch(err => console.log('WebXR check error:', err));
+        } else {
+            console.log('WebXR not available');
+        }
+    </script>
+</body>
+
+</html>
